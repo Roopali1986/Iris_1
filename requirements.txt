@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 scikit-learn>=0.24.0
 pandas>=1.2.0
 matplotlib>=3.3.0
 numpy>=1.19.0
 pytest>=6.2.0
-=======
-pandas
-scikit-learn
-matplotlib
->>>>>>> 79d6fd86d03afef181332793218489ef7d78b55e
+

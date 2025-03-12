@@ -79,32 +79,3 @@ classifier = dec_tree.fit(inputs, target)
 plt.figure(figsize=(20,15))
 tree.plot_tree(classifier, filled = True)
 
-# prompt: create a  pickle file for above code
-
-import pickle
-
-# Assuming the code you provided is in a cell above this one and has created the 'classifier' object.
-# If not, uncomment the following code to recreate the classifier
-
-# import pandas as pd
-# from sklearn import tree
-# import matplotlib.pyplot as plt
-# from sklearn.preprocessing import LabelEncoder as le
-# %matplotlib inline
-# iris = pd.read_csv('/content/Iris.csv')
-# iris['Species'] = le.fit_transform(iris['Species'], iris['Species'])
-# inputs = iris.drop(iris[['Id', 'Species']], axis =1)
-# target = iris[['Species']]
-# dec_tree = tree.DecisionTreeClassifier(random_state = 0)
-# classifier = dec_tree.fit(inputs, target)
-
-
-# Save the model to a file using pickle
-filename = 'decision_tree_model.pkl'  # Choose a filename for your pickle file
-with open(filename, 'wb') as file:
-    pickle.dump(classifier, file)
-
-print(f"Decision tree model saved to {filename}")
-
-# prompt: create requirement.txt for above code
->>>>>>> 79d6fd86d03afef181332793218489ef7d78b55e
