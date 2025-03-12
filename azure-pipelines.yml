@@ -1,0 +1,25 @@
+# Azure Pipelines YAML file
+
+trigger:
+  - main
+
+jobs:
+- job: 'RunIrisScript'
+  pool:
+    vmImage: 'ubuntu-latest'
+  
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.13'
+      addToPath: true
+
+  - script: |
+      ls -l
+    displayName: 'List Directory Contents'
+
+  - script: |
+      python iris_1.py
+    displayName: 'Run iris_1.py'
+    env:
+      IRIS_CSV_PATH: 'Iris.csv'
