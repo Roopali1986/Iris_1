@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'ubuntu-22.04'  # Using 22.04 to avoid the warning
 
 steps:
 - task: UsePythonVersion@0
@@ -13,7 +13,7 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install scikit-learn>=0.24.0 pandas>=1.2.0 matplotlib>=3.3.0 numpy>=1.19.0 pytest>=6.2.0
   displayName: 'Install dependencies'
 
 - script: |
