@@ -1,25 +1,34 @@
-# Azure Pipelines YAML file
-
 trigger:
-  - main
+- main
 
-jobs:
-- job: 'RunIrisScript'
-  pool:
-    vmImage: 'ubuntu-latest'
-  
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.13'
-      addToPath: true
+pool:
+  vmImage: 'ubuntu-latest'
 
-  - script: |
-      ls -l
-    displayName: 'List Directory Contents'
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.8'
+    addToPath: true
+  displayName: 'Setup Python'
 
-  - script: |
-      python iris_1.py
-    displayName: 'Run iris_1.py'
-    env:
-      IRIS_CSV_PATH: 'Iris.csv'
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- script: |
+    pip install pytest pytest-cov matplotlib
+    pytest --doctest-modules --junitxml=junit/test-results.xml --cov=. --cov-report=xml
+  displayName: 'Run tests'
+  continueOnError: true
+
+- script: |
+    python iris_1.py
+  displayName: 'Run model training'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/decision_tree_model.pkl'
+    artifact: 'model'
+    publishLocation: 'pipeline'
+  displayName: 'Publish trained model'
