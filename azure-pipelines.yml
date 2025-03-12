@@ -1,25 +1,25 @@
+# Azure Pipelines YAML file
+
 trigger:
   - main
 
-pool:
-  vmImage: 'ubuntu-latest'
+jobs:
+- job: 'RunIrisScript'
+  pool:
+    vmImage: 'ubuntu-latest'
+  
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.13'
+      addToPath: true
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    addToPath: true
+  - script: |
+      ls -l
+    displayName: 'List Directory Contents'
 
-- script: |
-    pip install -r requirements.txt
-  displayName: 'Install Dependencies'
-
-- script: |
-    python iris_1.py
-  displayName: 'Run iris_1.py'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    pathToPublish: '$(System.DefaultWorkingDirectory)'
-    artifactName: 'drop'
-    publishLocation: 'Container'
+  - script: |
+      python iris_1.py
+    displayName: 'Run iris_1.py'
+    env:
+      IRIS_CSV_PATH: 'Iris.csv'
