@@ -34,5 +34,14 @@ steps:
         model = pickle.load(f)
     print('Model loaded successfully')
     print(f'Model type: {type(model)}')
-    "
+    ''
   displayName: 'Validate deployment'
+- task: DownloadPipelineArtifact@2
+  inputs:
+    buildType: 'specific'
+    project: '$(System.TeamProjectId)'  # Use current project ID
+    definition: 'Roopali1986.Iris_1'  # Your CI pipeline name
+    buildVersionToDownload: 'latest'
+    artifactName: 'model'
+    targetPath: '$(Pipeline.Workspace)/model'
+  displayName: 'Download model artifact'  
