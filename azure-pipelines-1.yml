@@ -4,7 +4,7 @@ trigger: none  # No direct trigger
 resources:
   pipelines:
     - pipeline: IrisModelCI
-      source: Roopali1986.Iris_1  # Replace with your actual CI pipeline name
+      source: Roopali1986.Iris_1  # Your CI pipeline name
       trigger: true  # Auto-trigger when CI completes
 
 pool:
@@ -13,9 +13,12 @@ pool:
 steps:
 - task: DownloadPipelineArtifact@2
   inputs:
-    source: 'specific'
-    artifact: 'model'
-    path: '$(Pipeline.Workspace)/model'
+    buildType: 'specific'
+    project: '$(System.TeamProjectId)'
+    definition: 'Roopali1986.Iris_1'
+    buildVersionToDownload: 'latest'
+    artifactName: 'model'
+    targetPath: '$(Pipeline.Workspace)/model'
   displayName: 'Download model artifact'
 
 - script: |
@@ -34,14 +37,5 @@ steps:
         model = pickle.load(f)
     print('Model loaded successfully')
     print(f'Model type: {type(model)}')
-    ''
+    "
   displayName: 'Validate deployment'
-- task: DownloadPipelineArtifact@2
-  inputs:
-    buildType: 'specific'
-    project: '$(System.TeamProjectId)'  # Use current project ID
-    definition: 'Roopali1986.Iris_1'  # Your CI pipeline name
-    buildVersionToDownload: 'latest'
-    artifactName: 'model'
-    targetPath: '$(Pipeline.Workspace)/model'
-  displayName: 'Download model artifact'  
