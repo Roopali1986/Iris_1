@@ -1,0 +1,162 @@
+# Simplified deployment pipeline
+trigger: none
+
+# No resources section - we'll handle the artifact differently
+
+pool:
+  vmImage: 'ubuntu-22.04'
+
+steps:
+- task: DownloadBuildArtifacts@0
+  inputs:
+    buildType: 'specific'
+    project: '$(System.TeamProjectId)'
+    pipeline: 'Roopali1986.Iris_1'  # Your CI pipeline name
+    buildVersionToDownload: 'latest'
+    downloadType: 'single'
+    artifactName: 'model'
+    downloadPath: '$(System.ArtifactsDirectory)'
+  displayName: 'Download model artifact'
+
+- script: |
+    echo "Deploying model to production environment"
+    mkdir -p $(System.DefaultWorkingDirectory)/production
+    cp $(System.ArtifactsDirectory)/model/decision_tree_model.pkl $(System.DefaultWorkingDirectory)/production/
+    ls -la $(System.DefaultWorkingDirectory)/production
+  displayName: 'Deploy model to production'
+
+- script: |
+    # Install Flask for web serving
+    python -m pip install flask
+    
+    # Create templates directory
+    mkdir -p $(System.DefaultWorkingDirectory)/production/templates
+    
+    # Create a simple HTML interface
+    cat > $(System.DefaultWorkingDirectory)/production/templates/index.html << 'EOL'
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Iris Model Predictor</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            .form-group { margin-bottom: 15px; }
+            label { display: block; margin-bottom: 5px; }
+            button { padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+            #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+        </style>
+    </head>
+    <body>
+        <h1>Iris Flower Predictor</h1>
+        <form id="prediction-form">
+            <div class="form-group">
+                <label for="sepal-length">Sepal Length:</label>
+                <input type="number" id="sepal-length" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="sepal-width">Sepal Width:</label>
+                <input type="number" id="sepal-width" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="petal-length">Petal Length:</label>
+                <input type="number" id="petal-length" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="petal-width">Petal Width:</label>
+                <input type="number" id="petal-width" step="0.1" required>
+            </div>
+            <button type="submit">Predict</button>
+        </form>
+        <div id="result"></div>
+        
+        <script>
+            document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const features = [
+                    parseFloat(document.getElementById('sepal-length').value),
+                    parseFloat(document.getElementById('sepal-width').value),
+                    parseFloat(document.getElementById('petal-length').value),
+                    parseFloat(document.getElementById('petal-width').value)
+                ];
+                
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ features }),
+                    });
+                    
+                    const data = await response.json();
+                    const species = ['Setosa', 'Versicolor', 'Virginica'][data.prediction];
+                    
+                    document.getElementById('result').innerHTML = `
+                        <h3>Prediction Result:</h3>
+                        <p>The iris flower is predicted to be: <strong>${species}</strong></p>
+                    `;
+                } catch (error) {
+                    document.getElementById('result').innerHTML = `
+                        <h3>Error:</h3>
+                        <p>${error.message}</p>
+                    `;
+                }
+            });
+        </script>
+    </body>
+    </html>
+    EOL
+    
+    # Update Flask app to serve the frontend
+    cat > $(System.DefaultWorkingDirectory)/production/app.py << 'EOL'
+    from flask import Flask, request, jsonify, render_template
+    import pickle
+    import numpy as np
+    import os
+    
+    app = Flask(__name__)
+    
+    # Load the model
+    with open('decision_tree_model.pkl', 'rb') as f:
+        model = pickle.load(f)
+    
+    @app.route('/')
+    def home():
+        return render_template('index.html')
+    
+    @app.route('/predict', methods=['POST'])
+    def predict():
+        data = request.json
+        features = np.array(data['features']).reshape(1, -1)
+        prediction = model.predict(features)[0]
+        return jsonify({'prediction': int(prediction)})
+    
+    @app.route('/health', methods=['GET'])
+    def health():
+        return jsonify({'status': 'healthy'})
+    
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=5000)
+    EOL
+    
+    echo "Frontend application created and deployed"
+  displayName: 'Create Web Frontend'
+
+- script: |
+    # Create a simple start script
+    cat > $(System.DefaultWorkingDirectory)/production/start.sh << 'EOL'
+    #!/bin/bash
+    export FLASK_APP=app.py
+    export FLASK_ENV=production
+    python -m flask run --host=0.0.0.0 --port=5000
+    EOL
+    
+    # Make the script executable
+    chmod +x $(System.DefaultWorkingDirectory)/production/start.sh
+    
+    echo "To run the application:"
+    echo "1. Navigate to the production directory"
+    echo "2. Run ./start.sh"
+    echo "3. Open a browser to http://localhost:5000"
+  displayName: 'Create startup script'
