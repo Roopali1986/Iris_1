@@ -1,0 +1,38 @@
+# Deployment pipeline for Iris model
+trigger: none  # No direct trigger
+
+resources:
+  pipelines:
+    - pipeline: IrisModelCI
+      source: Roopali1986.Iris_1  # Replace with your actual CI pipeline name
+      trigger: true  # Auto-trigger when CI completes
+
+pool:
+  vmImage: 'ubuntu-22.04'
+
+steps:
+- task: DownloadPipelineArtifact@2
+  inputs:
+    source: 'specific'
+    artifact: 'model'
+    path: '$(Pipeline.Workspace)/model'
+  displayName: 'Download model artifact'
+
+- script: |
+    echo "Deploying model to production environment"
+    mkdir -p $(System.DefaultWorkingDirectory)/production
+    cp $(Pipeline.Workspace)/model/decision_tree_model.pkl $(System.DefaultWorkingDirectory)/production/
+    ls -la $(System.DefaultWorkingDirectory)/production
+  displayName: 'Deploy model to production'
+
+- script: |
+    python -m pip install scikit-learn pandas numpy
+    echo "Validating deployed model..."
+    python -c "
+    import pickle
+    with open('$(System.DefaultWorkingDirectory)/production/decision_tree_model.pkl', 'rb') as f:
+        model = pickle.load(f)
+    print('Model loaded successfully')
+    print(f'Model type: {type(model)}')
+    "
+  displayName: 'Validate deployment'
